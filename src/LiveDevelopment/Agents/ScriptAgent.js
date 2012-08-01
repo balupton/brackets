@@ -49,6 +49,15 @@ define(function ScriptAgent(require, exports, module) {
         node.trace = trace;
     }
 
+    /** Convert Chrome setScriptSource chunks into useful diff information */
+    function _diffFromChunks(chunks) {
+        var i, diff = {};
+        for (i = 0; i + 2 < chunks.length; i += 3) {
+            diff[chunks[i]] = chunks[i + 2] - chunks[i + 1];
+        }
+        return diff;
+    }
+
     /** Get the script information for a given url
      * @param {string} url
      */
@@ -61,6 +70,30 @@ define(function ScriptAgent(require, exports, module) {
      */
     function scriptForURL(url) {
         return _urlToScript[url];
+    }
+
+    /** Set the script source of the given script
+     * @param {Script} script
+     * @param {string} source
+     * @return {Promise} promise
+     */
+    function setScriptSource(script, scriptSource) {
+        var r = $.Deferred();
+        // WebInspector Command: Debugger.setScriptSource
+        Inspector.Debugger.setScriptSource(script.scriptId, scriptSource, function callback(res) {
+            // res = {callFrames, result}
+            res.script = script;
+            res.scriptSource = scriptSource;
+            if (res.result.updated) {
+                res.diff = _diffFromChunks(res.result.textual_diff.chunks);
+                Inspector.trigger("ScriptAgent.setScriptSource", res);
+                r.resolve(res);
+            } else {
+                Inspector.trigger("ScriptAgent.setScriptSourceFailed", res);
+                r.reject(res);
+            }
+        });
+        return r.promise();
     }
 
     // DOMAgent Event: Document root loaded
@@ -143,4 +176,5 @@ define(function ScriptAgent(require, exports, module) {
     exports.scriptForURL = scriptForURL;
     exports.load = load;
     exports.unload = unload;
+    exports.setScriptSource = setScriptSource;
 });
