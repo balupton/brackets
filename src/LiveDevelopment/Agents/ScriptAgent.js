@@ -51,9 +51,11 @@ define(function ScriptAgent(require, exports, module) {
 
     /** Convert Chrome setScriptSource chunks into useful diff information */
     function _diffFromChunks(chunks) {
-        var i, diff = {};
+        var i, x, diff = {}, offset = 0;
         for (i = 0; i + 2 < chunks.length; i += 3) {
-            diff[chunks[i]] = chunks[i + 2] - chunks[i + 1];
+            x = chunks[i + 2] - chunks[i + 1] - offset;
+            diff[chunks[i] + offset] = x;
+            offset += x;
         }
         return diff;
     }
