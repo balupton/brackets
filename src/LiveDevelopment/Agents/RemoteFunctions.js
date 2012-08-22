@@ -346,7 +346,10 @@ function RemoteFunctions() {
     }
 
     // install event listeners
+
+    /* FUTURE
     window.document.addEventListener("keydown", onKeyDown);
+    */
 
     return {
         "showGoto": showGoto,
